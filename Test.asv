@@ -44,30 +44,23 @@ demodData_up_down = Rx(EbN0min,EbN0max,points,modData_with_downsample);
 BER_theor = berawgn(EbN0_dB,'qam',constellation);
 %==========================================================================
 %Эквалайзер
-%ВНИМАНИЕ! Подразумевается, что эквалайзер знает и отправленный (без шумов), и принятый (с шумами) сигналы
-filter_length = 31; %Длина КИХ-фильтра. ВНИМАНИЕ! Количество коэффициентов больше на 1
-d = floor((filter_length-1)/2); %Задаём сдвиг по центру
+%ВНИМАНИЕ! Подразумевается, что фильтр знает и отправленный (без шумов), и принятый (с шумами) сигналы
+d = floor((filter_length-1)/2);
 rolloff = 0.2;
-rrcFilter_e = rcosdesign(rolloff, (filter_length-1), 1); %Создаём коэффициенты входного фильтра
-y = upfirdn(modData_with_downsample(test_number,:), rrcFilter_e, 1); %Пропускаем x(k) через входной фильтр
-y = y(filter_length:end); %Компенсируем задержку
-e = transpose(modData) - y; %Считаем вектор ошибок e(k)
-X = zeros(size(modData,1),filter_length); %Инициализируем матрицу X
-
-for i = 1:filter_length %Создаём матрицу X из последовательности x(k)
-    if i<d
-       X(:,i) = circshift(modData, (-d+i));
-    elseif i==d
-        X(:,i) = modData;
-    else
-        X(:,i) = circshift(modData, (-d+i));
-    end 
-end
-X_h = X'; %Эрмитово сопряжение для дальнейших вычислений
-c = transpose(X_h*X)*X_h*modData; %Метод наименьших квадратов для рассчёта новых коэффициентов
-
-%X_1 = transpose(X_h*X)*X;
-%a = transpose(X);
+filter_length = 31; %Длина КИХ-фильтра. ВНИМАНИЕ! Количество коэффициентов больше на 1
+rrcFilter = rcosdesign(rolloff, filter_length, sps);
+y = upfirdn(signal, rrcFilter, sps);
+%a = zeros(size(modData,1),filter_length);
+%for i = 1:filter_length
+%    if i<d
+ %       a(:,i) = circshift(modData, (-d+i));
+%    elseif i==d
+%        a(:,i) = modData;
+%    else
+%        a(:,i) = circshift(modData, (-d+i));
+%    end 
+%end
+%a = transpose(a);
 %a_MP = pinv(a);
 %h = conv(a_MP(:,test_number),modData_with_downsample(test_number,:), 'same');
 %Делаем произведение данных вышедших из приёмника на передаточную функцию
